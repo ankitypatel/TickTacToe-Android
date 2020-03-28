@@ -21,43 +21,21 @@ import java.lang.ref.WeakReference;
 
 public class MainActivity extends AppCompatActivity {
 
-    public enum Symbol{
-        X_SELECTED,
-        O_SELECTED,
-        UNDEFINED
-    };
-
-    Symbol[][] boardStatus = { {Symbol.UNDEFINED, Symbol.UNDEFINED, Symbol.UNDEFINED},
-                               {Symbol.UNDEFINED, Symbol.UNDEFINED, Symbol.UNDEFINED},
-                               {Symbol.UNDEFINED, Symbol.UNDEFINED, Symbol.UNDEFINED} };
-    boolean gameCompleted = false;
-    boolean gameIsDraw = false;
-    boolean row0 = false;
-    boolean row1 = false;
-    boolean row2 = false;
-    boolean column0 = false;
-    boolean column1 = false;
-    boolean column2 = false;
-    boolean diag0 = false;
-    boolean diag1 = false;
-    int filledBoxes = 0;
-
     class Box{
         ImageView xImage;
         ImageView oImage;
         ImageView activeImage;
         boolean boxFilled;
-        int x,y;
+        Symbol symbolSet;
 
-        public Box(int xImageId, int oImageId, int posX, int posY)
+        public Box(int xImageId, int oImageId)
         {
             xImage = findViewById(xImageId);
             oImage = findViewById(oImageId);
             xImage.setAlpha(0f);
             oImage.setAlpha(0f);
             boxFilled = false;
-            x = posX;
-            y = posY;
+            symbolSet = Symbol.UNDEFINED;
         }
 
         public void setX() {
@@ -66,8 +44,7 @@ public class MainActivity extends AppCompatActivity {
                 oImage.setAlpha(0f);
                 boxFilled = true;
                 activeImage = xImage;
-                boardStatus[x][y] = Symbol.X_SELECTED;
-                Log.i("INFO", "x at"+ x + y);
+                symbolSet = Symbol.X_SELECTED;
                 filledBoxes++;
             }
         }
@@ -78,9 +55,8 @@ public class MainActivity extends AppCompatActivity {
                 oImage.setAlpha(1f);
                 boxFilled = true;
                 activeImage = oImage;
-                boardStatus[x][y] = Symbol.O_SELECTED;
+                symbolSet = Symbol.O_SELECTED;
                 filledBoxes++;
-                Log.i("INFO", "o at"+ x + y);
             }
         }
 
@@ -94,17 +70,34 @@ public class MainActivity extends AppCompatActivity {
             return activeImage;
         }
 
+        public Symbol getSymbol()
+        {
+            return symbolSet;
+        }
+
+        public void setSymbol(Symbol symbol)
+        {
+            if (!boxFilled){
+                if (Symbol.X_SELECTED == symbol){
+                    setX();
+                } else if (Symbol.O_SELECTED == symbol){
+                    setO();
+                }
+            }
+        }
+
         public void resetBox()
         {
             boxFilled = false;
-            xImage.animate().alpha(0f).scaleX(1).scaleY(1).start();
-            oImage.animate().alpha(0f).scaleX(1).scaleY(1).start();
+            symbolSet = Symbol.UNDEFINED;
+            xImage.setAlpha(0.0f);
+            oImage.setAlpha(0.0f);
         }
     }
 
     class Player{
         ///boolean xSelected;
-       // boolean oSelected;
+        // boolean oSelected;
         Symbol symbol;
         boolean isActive;
         int     score;
@@ -132,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public Symbol isSymbolSelected() {
-             return symbol;
+            return symbol;
         }
 
         public void resetPlayer()
@@ -142,26 +135,55 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public enum Symbol{
+        X_SELECTED,
+        O_SELECTED,
+        UNDEFINED
+    };
+
     // Create object for each box in board (or frame)
     // Row 0
-    Box boxAtPos00 = null;
-    Box boxAtPos01 = null;
-    Box boxAtPos02 = null;
+    Box boxAtPos00;
+    Box boxAtPos01;
+    Box boxAtPos02;
 
     // Row 1
-    Box boxAtPos10 = null;
-    Box boxAtPos11 = null;
-    Box boxAtPos12 = null;
+    Box boxAtPos10;
+    Box boxAtPos11;
+    Box boxAtPos12;
 
     //Row 2
-    Box boxAtPos20 = null;
-    Box boxAtPos21 = null;
-    Box boxAtPos22 = null;
+    Box boxAtPos20;
+    Box boxAtPos21;
+    Box boxAtPos22;
+
+    int[][] xImage = { {R.id.ximage00, R.id.ximage01, R.id.ximage02},
+                       {R.id.ximage10, R.id.ximage11, R.id.ximage12},
+                       {R.id.ximage20, R.id.ximage21, R.id.ximage22} };
+
+    int[][] oImage = { {R.id.oimage00, R.id.oimage01, R.id.oimage02},
+                       {R.id.oimage10, R.id.oimage11, R.id.oimage12},
+                       {R.id.oimage20, R.id.oimage21, R.id.oimage22} };
+
+    Box[][] board = { {boxAtPos00, boxAtPos01, boxAtPos02},
+                      {boxAtPos10, boxAtPos11, boxAtPos12},
+                      {boxAtPos20, boxAtPos21, boxAtPos22} };
+
+    boolean gameCompleted = false;
+    boolean gameIsDraw = false;
+    boolean row0 = false;
+    boolean row1 = false;
+    boolean row2 = false;
+    boolean column0 = false;
+    boolean column1 = false;
+    boolean column2 = false;
+    boolean diag0 = false;
+    boolean diag1 = false;
+    int filledBoxes = 0;
 
     // Create player object
     Player playerA = null;
     Player playerB = null;
-
 
     public Player getPlayer(Symbol symbol )
     {
@@ -211,21 +233,21 @@ public class MainActivity extends AppCompatActivity {
     public void displayWiningBoxes()
     {
         if (row0) {
-            toggleWiningBoxes( boxAtPos00.getActiveImage(), boxAtPos01.getActiveImage(), boxAtPos02.getActiveImage());
+            toggleWiningBoxes( board[0][0].getActiveImage(), board[0][1].getActiveImage(), board[0][2].getActiveImage());
         } else if (row1) {
-            toggleWiningBoxes( boxAtPos10.getActiveImage(), boxAtPos11.getActiveImage(), boxAtPos12.getActiveImage());
+            toggleWiningBoxes( board[1][0].getActiveImage(), board[1][1].getActiveImage(), board[1][2].getActiveImage());
         } else if (row2) {
-            toggleWiningBoxes( boxAtPos20.getActiveImage(), boxAtPos21.getActiveImage(), boxAtPos22.getActiveImage());
+            toggleWiningBoxes( board[2][0].getActiveImage(), board[2][1].getActiveImage(), board[2][2].getActiveImage());
         } else if (column0) {
-            toggleWiningBoxes( boxAtPos00.getActiveImage(), boxAtPos10.getActiveImage(), boxAtPos20.getActiveImage());
+            toggleWiningBoxes( board[0][0].getActiveImage(), board[1][0].getActiveImage(), board[2][0].getActiveImage());
         } else if (column1) {
-            toggleWiningBoxes( boxAtPos01.getActiveImage(), boxAtPos11.getActiveImage(), boxAtPos21.getActiveImage());
+            toggleWiningBoxes( board[0][1].getActiveImage(), board[1][1].getActiveImage(), board[2][1].getActiveImage());
         } else if (column2) {
-            toggleWiningBoxes( boxAtPos02.getActiveImage(), boxAtPos12.getActiveImage(), boxAtPos22.getActiveImage());
+            toggleWiningBoxes( board[0][2].getActiveImage(), board[1][2].getActiveImage(), board[2][2].getActiveImage());
         } else if (diag0) {
-            toggleWiningBoxes( boxAtPos00.getActiveImage(), boxAtPos11.getActiveImage(), boxAtPos22.getActiveImage());
+            toggleWiningBoxes( board[0][0].getActiveImage(), board[1][1].getActiveImage(), board[2][2].getActiveImage());
         } else if (diag1) {
-            toggleWiningBoxes( boxAtPos02.getActiveImage(), boxAtPos11.getActiveImage(), boxAtPos20.getActiveImage());
+            toggleWiningBoxes( board[0][2].getActiveImage(), board[1][1].getActiveImage(), board[2][0].getActiveImage());
         }
     }
 
@@ -243,32 +265,16 @@ public class MainActivity extends AppCompatActivity {
         diag1 = false;
         filledBoxes = 0;
 
-        // reset board
-        for (int x = 0; x < 3 ; x++) {
-            for (int y = 0; y < 3 ; y++) {
-                boardStatus[x][y] = Symbol.UNDEFINED;
-            }
-        }
-
         ImageView oSelectImage = findViewById(R.id.oSelected);
         ImageView xSelectImage = findViewById(R.id.xSelected);
         xSelectImage.animate().alpha(1f).start();
         oSelectImage.animate().alpha(1f).start();
 
-        // Row 0
-        boxAtPos00.resetBox();
-        boxAtPos01.resetBox();
-        boxAtPos02.resetBox();
-
-        // Row 1
-        boxAtPos10.resetBox();
-        boxAtPos11.resetBox();
-        boxAtPos12.resetBox();
-
-        // Row 2
-        boxAtPos20.resetBox();
-        boxAtPos21.resetBox();
-        boxAtPos22.resetBox();
+        for (int x = 0; x < 3; x++){
+            for (int y = 0; y < 3; y++){
+                board[x][y].resetBox();
+            }
+        }
 
         // Players
         playerA.resetPlayer();
@@ -280,23 +286,23 @@ public class MainActivity extends AppCompatActivity {
     {
         Log.i("INFO", "processGameStatus");
         // Check 1st row and column
-        if ( ( column0 = (Symbol.UNDEFINED != boardStatus[0][0]) && ( boardStatus[1][0] == boardStatus[0][0]) && (boardStatus[2][0] == boardStatus[0][0]) )||
-             ( row0 = (Symbol.UNDEFINED != boardStatus[0][0]) && ( boardStatus[0][1] == boardStatus[0][0]) && (boardStatus[0][2] == boardStatus[0][0]) ) ) {
+        if ( ( column0 = (Symbol.UNDEFINED != board[0][0].getSymbol()) && ( board[1][0].getSymbol() == board[0][0].getSymbol()) && (board[2][0].getSymbol() == board[0][0].getSymbol()) )||
+             ( row0 = (Symbol.UNDEFINED != board[0][0].getSymbol()) && ( board[0][1].getSymbol() == board[0][0].getSymbol()) && (board[0][2].getSymbol() == board[0][0].getSymbol()) ) ) {
             gameCompleted = true;
             Log.i("INFO", "row0"+row0+"column0"+column0);
         } // Check 2nd row and column
-        else if ( (column1 = (Symbol.UNDEFINED != boardStatus[1][1]) && ( boardStatus[0][1] == boardStatus[1][1]) && (boardStatus[2][1] == boardStatus[1][1])) ||
-                  (row1 = (Symbol.UNDEFINED != boardStatus[1][1]) && ( boardStatus[1][0] == boardStatus[1][1]) && (boardStatus[1][2] == boardStatus[1][1]))) {
+        else if ( (column1 = (Symbol.UNDEFINED != board[1][1].getSymbol()) && ( board[0][1].getSymbol() == board[1][1].getSymbol()) && (board[2][1].getSymbol() == board[1][1].getSymbol())) ||
+                  (row1 = (Symbol.UNDEFINED != board[1][1].getSymbol()) && ( board[1][0].getSymbol() == board[1][1].getSymbol()) && (board[1][2].getSymbol() == board[1][1].getSymbol()))) {
             gameCompleted = true;
             Log.i("INFO", "row1"+row0+"column0"+column1);
         } // check 3rd row and column
-        else if ( (column2 = (Symbol.UNDEFINED != boardStatus[2][2]) && ( boardStatus[0][2] == boardStatus[2][2]) && (boardStatus[1][2] == boardStatus[2][2])) ||
-                  (row2 = (Symbol.UNDEFINED != boardStatus[2][2]) && ( boardStatus[2][0] == boardStatus[2][2]) && (boardStatus[2][1] == boardStatus[2][2])) ) {
+        else if ( (column2 = (Symbol.UNDEFINED != board[2][2].getSymbol()) && ( board[0][2].getSymbol() == board[2][2].getSymbol()) && (board[1][2].getSymbol() == board[2][2].getSymbol())) ||
+                  (row2 = (Symbol.UNDEFINED != board[2][2].getSymbol()) && ( board[2][0].getSymbol() == board[2][2].getSymbol()) && (board[2][1].getSymbol() == board[2][2].getSymbol())) ) {
             gameCompleted = true;
             Log.i("INFO", "row2"+row2+"column2"+column2);
         } // check both diagonals
-        else if ( (diag0 = (Symbol.UNDEFINED != boardStatus[1][1]) && ( boardStatus[0][0] == boardStatus[1][1]) && (boardStatus[2][2] == boardStatus[1][1]) )||
-                  (diag1 = (Symbol.UNDEFINED != boardStatus[1][1]) && ( boardStatus[0][2] == boardStatus[1][1]) && (boardStatus[2][0] == boardStatus[1][1]) )) {
+        else if ( (diag0 = (Symbol.UNDEFINED != board[1][1].getSymbol()) && ( board[0][0].getSymbol() == board[1][1].getSymbol()) && (board[2][2].getSymbol() == board[1][1].getSymbol()) )||
+                  (diag1 = (Symbol.UNDEFINED != board[1][1].getSymbol()) && ( board[0][2].getSymbol() == board[1][1].getSymbol()) && (board[2][0].getSymbol() == board[1][1].getSymbol()) )) {
             gameCompleted = true;
             Log.i("INFO", "diag0"+diag0+"diag1"+diag1);
         }
@@ -319,56 +325,45 @@ public class MainActivity extends AppCompatActivity {
     public void selectedPos00(View view){
         Symbol symbolAt = getSymbol();
 
-        if (!boxAtPos00.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos00.setX();
-                oSelected(view);
-            } else  if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos00.setO();
-                xSelected(view);
-            }
+        board[0][0].setSymbol(symbolAt);
+
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
+
     }
 
     public void selectedPos01(View view){
         Symbol symbolAt = getSymbol();
-
-        if (!boxAtPos01.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos01.setX();
-                oSelected(view);
-            } else  if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos01.setO();
-                xSelected(view);
-            }
+        board[0][1].setSymbol(symbolAt);
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
     }
 
     public void selectedPos02(View view){
         Symbol symbolAt = getSymbol();
 
-        if (!boxAtPos02.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos02.setX();
-                oSelected(view);
-            } else  if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos02.setO();
-                xSelected(view);
-            }
+        board[0][2].setSymbol(symbolAt);
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
     }
 
     public void selectedPos10(View view){
         Symbol symbolAt = getSymbol();
 
-        if (!boxAtPos10.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos10.setX();
-                oSelected(view);
-            } else  if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos10.setO();
-                xSelected(view);
-            }
+        board[1][0].setSymbol(symbolAt);
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
 
     }
@@ -376,70 +371,55 @@ public class MainActivity extends AppCompatActivity {
     public void selectedPos11(View view){
         Symbol symbolAt = getSymbol();
 
-        if (!boxAtPos11.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos11.setX();
-                oSelected(view);
-            } else  if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos11.setO();
-                xSelected(view);
-            }
+        board[1][1].setSymbol(symbolAt);
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
     }
 
     public void selectedPos12(View view){
         Symbol symbolAt = getSymbol();
 
-        if (!boxAtPos12.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos12.setX();
-                oSelected(view);
-            } else  if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos12.setO();
-                xSelected(view);
-            }
+        board[1][2].setSymbol(symbolAt);
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
     }
 
     public void selectedPos20(View view){
         Symbol symbolAt = getSymbol();
 
-        if (!boxAtPos20.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos20.setX();
-                oSelected(view);
-            } else  if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos20.setO();
-                xSelected(view);
-            }
+        board[2][0].setSymbol(symbolAt);
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
     }
 
     public void selectedPos21(View view){
         Symbol symbolAt = getSymbol();
 
-        if (!boxAtPos21.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos21.setX();
-                oSelected(view);
-            } else  if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos21.setO();
-                xSelected(view);
-            }
+        board[2][1].setSymbol(symbolAt);
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
     }
 
     public void selectedPos22(View view){
         Symbol symbolAt = getSymbol();
 
-        if (!boxAtPos22.isBoxFilled()) {
-            if (Symbol.X_SELECTED == symbolAt) {
-                boxAtPos22.setX();
-                oSelected(view);
-            } else if (Symbol.O_SELECTED == symbolAt) {
-                boxAtPos22.setO();
-                xSelected(view);
-            }
+        board[2][2].setSymbol(symbolAt);
+        if (Symbol.X_SELECTED == symbolAt) {
+            oSelected(view);
+        } else  if (Symbol.O_SELECTED == symbolAt) {
+            xSelected(view);
         }
     }
 
@@ -474,20 +454,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        // Row 0
-        boxAtPos00 = new Box(R.id.ximage00,R.id.oimage00, 0, 0);
-        boxAtPos01 = new Box(R.id.ximage01,R.id.oimage01, 0,1);
-        boxAtPos02 = new Box(R.id.ximage02,R.id.oimage02, 0,2);
 
-        // Row 1
-        boxAtPos10 = new Box(R.id.ximage10,R.id.oimage10, 1,0);
-        boxAtPos11 = new Box(R.id.ximage11,R.id.oimage11, 1,1);
-        boxAtPos12 = new Box(R.id.ximage12,R.id.oimage12, 1,2);
-
-        // Row 2
-        boxAtPos20 = new Box(R.id.ximage20,R.id.oimage20,2,0);
-        boxAtPos21 = new Box(R.id.ximage21,R.id.oimage21,2,1);
-        boxAtPos22 = new Box(R.id.ximage22,R.id.oimage22,2,2);
+        for (int x = 0; x < 3; x++ ){
+            for (int y = 0; y < 3; y++){
+                board[x][y] = new Box(xImage[x][y], oImage[x][y]);
+            }
+        }
 
         // Players
         playerA = new Player();
