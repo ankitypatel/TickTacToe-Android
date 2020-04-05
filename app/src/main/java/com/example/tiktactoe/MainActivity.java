@@ -31,9 +31,10 @@ public class MainActivity extends AppCompatActivity {
         private ImageView activeImage; // Displayed Image
         private boolean   boxFilled;   // Flag to indicate box is filled
         private Symbol    symbolSet;   // Symbol set on this box X or O
+        private int x, y;
 
         // Constructor
-        public Box(int xImageId, int oImageId)
+        public Box(int xImageId, int oImageId, int posX, int posY)
         {
             xImage = findViewById(xImageId); // Init X image
             oImage = findViewById(oImageId); // Init O image
@@ -41,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
             oImage.setAlpha(0f);             // Hide O
             boxFilled = false;               // Box is not filled yet
             symbolSet = Symbol.UNDEFINED;    // No symbol for this box
+            x = posX;
+            y = posY;
         }
 
         // Method to put X in box
@@ -50,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
             boxFilled = true;              // Indicate box is filled
             activeImage = xImage;          // Active image is of X
             symbolSet = Symbol.X_SELECTED; // Set symbol to X
-            filledBoxes++;                 // Increment filled boxes
+            mFilledBoxes++;                 // Increment filled boxes
         }
 
         // Method to put O in box
@@ -60,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
             boxFilled = true;              // Indicate box is filled
             activeImage = oImage;          // Active image is of O
             symbolSet = Symbol.O_SELECTED; // Set symbol to O
-            filledBoxes++;                 // Increment filled boxes
+            mFilledBoxes++;                 // Increment filled boxes
         }
 
         // Method to return active image
@@ -70,10 +73,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Method to return set symbol
-        public Symbol getSymbol()
+        /*public Symbol getSymbol()
         {
             return symbolSet;
-        }
+        }*/
 
         // Method to set X or O in box
         public boolean setSymbol(Symbol symbol)
@@ -81,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
             boolean status = false;
 
             if (!boxFilled){
+                statusBoard[x][y] = symbol;
                 if (Symbol.X_SELECTED == symbol){
                     setX();
                     status = true;
@@ -97,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
         {
             boxFilled = false;
             symbolSet = Symbol.UNDEFINED;
+            statusBoard[x][y] = symbolSet;
             xImage.animate().alpha(0f).setDuration(1000).start();
             oImage.animate().alpha(0f).setDuration(1000).start();
         }
@@ -152,7 +157,19 @@ public class MainActivity extends AppCompatActivity {
         X_SELECTED,         // Symbol X
         O_SELECTED,         // Symbol O
         UNDEFINED           // Blank box
-    };
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // Define Game Status:
+    // This enums defines game status
+    /////////////////////////////////////////////////////////////////////
+    public enum GameStatus{
+        GAME_NOT_STARTED,     // Game is not started
+        GAME_STARTED,         // Game is started
+        GAME_INCOMPLETE,      // Game is incomplete
+        GAME_COMPLETE,        // Game is completed (winner is decided)
+        GAME_IS_DRAW          // Game is started (Nobody won)
+    }
 
     // Create object for each box in 3 x 3 board (or frame)
     // Row 0
@@ -180,23 +197,39 @@ public class MainActivity extends AppCompatActivity {
                                {R.id.oimage10, R.id.oimage11, R.id.oimage12},
                                {R.id.oimage20, R.id.oimage21, R.id.oimage22} };
 
+    Symbol[][] statusBoard =  { {Symbol.UNDEFINED, Symbol.UNDEFINED, Symbol.UNDEFINED},
+                                {Symbol.UNDEFINED, Symbol.UNDEFINED, Symbol.UNDEFINED},
+                                {Symbol.UNDEFINED, Symbol.UNDEFINED, Symbol.UNDEFINED} };
+
     // Create 3 x 3 TickTacToe board
-    private Box[][] board = { {boxAtPos00, boxAtPos01, boxAtPos02},
+    private Box[][] mBoard = { {boxAtPos00, boxAtPos01, boxAtPos02},
                               {boxAtPos10, boxAtPos11, boxAtPos12},
                               {boxAtPos20, boxAtPos21, boxAtPos22} };
 
-    private Symbol currentSymbol = Symbol.UNDEFINED;   // To keep track of which symbol is in play
-    private boolean gameCompleted = false;             // Flag to indicate game is completed
-    private boolean gameIsDraw = false;                // Flag to indicate game is draw
+    private Symbol currentSymbol, previousSymbol = Symbol.UNDEFINED;   // To keep track of which symbol is in play
     private boolean row0, row1, row2 = false;          // Flags to indicate winning row
     private boolean column0, column1, column2 = false; // Flags to indicate winning column
     private boolean diag0, diag1 = false;              // Flags to indicate winning diagonals
-    private int filledBoxes = 0;                       // Number to keep track of filled boxes
+    private int mFilledBoxes = 0;                       // Number to keep track of filled boxes
 
     // Create player object
     private Player playerA = null; // First player
     private Player playerB = null; // Second player
 
+    public Symbol[][] copyBoard( Symbol[][] board )
+    {
+        Symbol[][] newBoard = new Symbol[3][3];
+
+        if (board != null) {
+            for (int x = 0; x < 3; x++) {
+                for (int y = 0; y < 3; y++) {
+                    newBoard[x][y] = board[x][y];
+                }
+            }
+        }
+
+        return newBoard;
+    }
     //////////////////////////////////////////////////////////////////////
     // This method displays winning boxes (rows, columns, or diagonals)
     //
@@ -221,21 +254,21 @@ public class MainActivity extends AppCompatActivity {
     public void displayWiningBoxes()
     {
         if (row0) {
-            toggleWiningBoxes( board[0][0].getActiveImage(), board[0][1].getActiveImage(), board[0][2].getActiveImage()); // Row 0
+            toggleWiningBoxes( mBoard[0][0].getActiveImage(), mBoard[0][1].getActiveImage(), mBoard[0][2].getActiveImage()); // Row 0
         } else if (row1) {
-            toggleWiningBoxes( board[1][0].getActiveImage(), board[1][1].getActiveImage(), board[1][2].getActiveImage()); // Row 1
+            toggleWiningBoxes( mBoard[1][0].getActiveImage(), mBoard[1][1].getActiveImage(), mBoard[1][2].getActiveImage()); // Row 1
         } else if (row2) {
-            toggleWiningBoxes( board[2][0].getActiveImage(), board[2][1].getActiveImage(), board[2][2].getActiveImage()); // Row 2
+            toggleWiningBoxes( mBoard[2][0].getActiveImage(), mBoard[2][1].getActiveImage(), mBoard[2][2].getActiveImage()); // Row 2
         } else if (column0) {
-            toggleWiningBoxes( board[0][0].getActiveImage(), board[1][0].getActiveImage(), board[2][0].getActiveImage()); // Column 0
+            toggleWiningBoxes( mBoard[0][0].getActiveImage(), mBoard[1][0].getActiveImage(), mBoard[2][0].getActiveImage()); // Column 0
         } else if (column1) {
-            toggleWiningBoxes( board[0][1].getActiveImage(), board[1][1].getActiveImage(), board[2][1].getActiveImage()); // Column 1
+            toggleWiningBoxes( mBoard[0][1].getActiveImage(), mBoard[1][1].getActiveImage(), mBoard[2][1].getActiveImage()); // Column 1
         } else if (column2) {
-            toggleWiningBoxes( board[0][2].getActiveImage(), board[1][2].getActiveImage(), board[2][2].getActiveImage()); // Column 2
+            toggleWiningBoxes( mBoard[0][2].getActiveImage(), mBoard[1][2].getActiveImage(), mBoard[2][2].getActiveImage()); // Column 2
         } else if (diag0) {
-            toggleWiningBoxes( board[0][0].getActiveImage(), board[1][1].getActiveImage(), board[2][2].getActiveImage()); // Diagonal 0 (\)
+            toggleWiningBoxes( mBoard[0][0].getActiveImage(), mBoard[1][1].getActiveImage(), mBoard[2][2].getActiveImage()); // Diagonal 0 (\)
         } else if (diag1) {
-            toggleWiningBoxes( board[0][2].getActiveImage(), board[1][1].getActiveImage(), board[2][0].getActiveImage()); // Diagonal 1 (/)
+            toggleWiningBoxes( mBoard[0][2].getActiveImage(), mBoard[1][1].getActiveImage(), mBoard[2][0].getActiveImage()); // Diagonal 1 (/)
         }
     }
 
@@ -249,8 +282,7 @@ public class MainActivity extends AppCompatActivity {
     public void restartGame()
     {
         currentSymbol = Symbol.UNDEFINED;
-        gameCompleted = false;
-        gameIsDraw = false;
+        previousSymbol = Symbol.UNDEFINED;
         row0 = false;
         row1 = false;
         row2 = false;
@@ -259,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
         column2 = false;
         diag0 = false;
         diag1 = false;
-        filledBoxes = 0;
+        mFilledBoxes = 0;
 
         // Reset X and O selection buttons
         ImageView oSelectImage = findViewById(R.id.oSelected);
@@ -270,7 +302,7 @@ public class MainActivity extends AppCompatActivity {
         // Reset all boxes in board
         for (int x = 0; x < 3; x++){
             for (int y = 0; y < 3; y++){
-                board[x][y].resetBox();
+                mBoard[x][y].resetBox();
             }
         }
 
@@ -289,7 +321,32 @@ public class MainActivity extends AppCompatActivity {
         // Get active player and increment score of active player
         Player player = getActivePLayer();
         player.incrementScore();
+    }
 
+    //////////////////////////////////////////////////////////////////////
+    // This method increments score for winning player
+    //
+    // Params : Void
+    // Return : Void
+    /////////////////////////////////////////////////////////////////////
+    public boolean isGameDraw(Symbol[][] passedBoard){
+        boolean status = false;
+        int boxesFilled = 0;
+
+        for ( int x = 0; x < 3; x++){
+            for (int y = 0; y < 3; y++){
+                if ( Symbol.UNDEFINED != passedBoard[x][y]){
+                    boxesFilled++;
+                }
+            }
+        }
+
+        if (boxesFilled == 9)
+        {
+            status = true;
+        }
+
+        return  status;
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -299,44 +356,141 @@ public class MainActivity extends AppCompatActivity {
     // Params : Void
     // Return : Void
     /////////////////////////////////////////////////////////////////////
-    public void processGameStatus()
+    public GameStatus getGameStatus(Symbol[][] passedBoard)
     {
+        GameStatus status = GameStatus.GAME_INCOMPLETE;
+
         // Decide if game is completed by checking boxes
         // Check 1st row and column
-        if ( ( column0 = (Symbol.UNDEFINED != board[0][0].getSymbol()) && ( board[1][0].getSymbol() == board[0][0].getSymbol()) && (board[2][0].getSymbol() == board[0][0].getSymbol()) )||
-             ( row0 = (Symbol.UNDEFINED != board[0][0].getSymbol()) && ( board[0][1].getSymbol() == board[0][0].getSymbol()) && (board[0][2].getSymbol() == board[0][0].getSymbol()) ) ) {
-            gameCompleted = true;
+        if ( ( column0 = (Symbol.UNDEFINED != passedBoard[0][0]) && ( passedBoard[1][0] == passedBoard[0][0]) && (passedBoard[2][0] == passedBoard[0][0]) )||
+                ( row0 = (Symbol.UNDEFINED != passedBoard[0][0]) && ( passedBoard[0][1] == passedBoard[0][0]) && (passedBoard[0][2] == passedBoard[0][0]) ) ) {
+            status = GameStatus.GAME_COMPLETE;
         } // Check 2nd row and column
-        else if ( (column1 = (Symbol.UNDEFINED != board[1][1].getSymbol()) && ( board[0][1].getSymbol() == board[1][1].getSymbol()) && (board[2][1].getSymbol() == board[1][1].getSymbol())) ||
-                  (row1 = (Symbol.UNDEFINED != board[1][1].getSymbol()) && ( board[1][0].getSymbol() == board[1][1].getSymbol()) && (board[1][2].getSymbol() == board[1][1].getSymbol()))) {
-            gameCompleted = true;
+        else if ( (column1 = (Symbol.UNDEFINED != passedBoard[1][1]) && ( passedBoard[0][1] == passedBoard[1][1]) && (passedBoard[2][1] == passedBoard[1][1])) ||
+                (row1 = (Symbol.UNDEFINED != passedBoard[1][1]) && ( passedBoard[1][0] == passedBoard[1][1]) && (passedBoard[1][2] == passedBoard[1][1]))) {
+            status = GameStatus.GAME_COMPLETE;
         } // check 3rd row and column
-        else if ( (column2 = (Symbol.UNDEFINED != board[2][2].getSymbol()) && ( board[0][2].getSymbol() == board[2][2].getSymbol()) && (board[1][2].getSymbol() == board[2][2].getSymbol())) ||
-                  (row2 = (Symbol.UNDEFINED != board[2][2].getSymbol()) && ( board[2][0].getSymbol() == board[2][2].getSymbol()) && (board[2][1].getSymbol() == board[2][2].getSymbol())) ) {
-            gameCompleted = true;
+        else if ( (column2 = (Symbol.UNDEFINED != passedBoard[2][2]) && ( passedBoard[0][2] == passedBoard[2][2]) && (passedBoard[1][2] == passedBoard[2][2])) ||
+                (row2 = (Symbol.UNDEFINED != passedBoard[2][2]) && ( passedBoard[2][0] == passedBoard[2][2]) && (passedBoard[2][1] == passedBoard[2][2])) ) {
+            status = GameStatus.GAME_COMPLETE;
         } // check both diagonals
-        else if ( (diag0 = (Symbol.UNDEFINED != board[1][1].getSymbol()) && ( board[0][0].getSymbol() == board[1][1].getSymbol()) && (board[2][2].getSymbol() == board[1][1].getSymbol()) )||
-                  (diag1 = (Symbol.UNDEFINED != board[1][1].getSymbol()) && ( board[0][2].getSymbol() == board[1][1].getSymbol()) && (board[2][0].getSymbol() == board[1][1].getSymbol()) )) {
-            gameCompleted = true;
+        else if ( (diag0 = (Symbol.UNDEFINED != passedBoard[1][1]) && ( passedBoard[0][0] == passedBoard[1][1]) && (passedBoard[2][2] == passedBoard[1][1]) )||
+                (diag1 = (Symbol.UNDEFINED != passedBoard[1][1]) && ( passedBoard[0][2] == passedBoard[1][1]) && (passedBoard[2][0] == passedBoard[1][1]) )) {
+            status = GameStatus.GAME_COMPLETE;
         }
 
+
+        // Check if all boxes are filled and winner hasn't decided yet,
+        // if so game is draw
+        if ( ( status == GameStatus.GAME_INCOMPLETE ) &&
+             ( true == isGameDraw(passedBoard)) )
+        {
+            status = GameStatus.GAME_IS_DRAW;
+        }
+
+        return status;
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    // This method does post processing after game is completed or it's draw
+    //
+    // Params : Void
+    // Return : Void
+    ////////////////////////////////////////////////////////////////////////
+    public void processGameStatus()
+    {
+        GameStatus status = getGameStatus(statusBoard);
+
         // Check if game is completed
-        if (gameCompleted) {
+        if ( status == GameStatus.GAME_COMPLETE ) {
             updateScore();         // update winner's score
             displayWiningBoxes();  // Animate winning boxes
-        } else{
-            // Check if all boxes are filled and winner hasn't decided yet,
-            // if so game is draw
-            if (9 == filledBoxes)
-            {
-                gameIsDraw = true;
-            }
         }
 
         // If game is completed or it's draw then time to restart game
-        if ( gameCompleted || gameIsDraw ){
+        if ( status == GameStatus.GAME_COMPLETE || status == GameStatus.GAME_IS_DRAW ){
             restartGame();
         }
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    // This method finds best move for maximizing player
+    //
+    // Params : Box[][] : Game board to be processed to find best move
+    //          isMaximizingPlayer : Maximizing player who is looking for best move
+    // Return : Void
+    ////////////////////////////////////////////////////////////////////////
+    public int minMaxAlgorithm( Symbol[][] currentBoardStatus, boolean isMaximizingPlayer, Symbol maxiMizingSymbol, Symbol miniMizingSymbol )
+    {
+        GameStatus status = getGameStatus(currentBoardStatus);
+        // Check if game is completed or draw
+        if ( status == GameStatus.GAME_COMPLETE ){
+            if (isMaximizingPlayer){
+                return -1;
+            }else{
+                return 1;
+            }
+        } else if (status == GameStatus.GAME_IS_DRAW){
+            return 0;
+        }
+
+            if (isMaximizingPlayer) {
+                int bestValue = -1;
+                for (int x = 0; x < 3; x++){
+                    for (int y = 0; y < 3; y++){
+                        // Create copy of board
+                        Symbol[][] tempBoardStatus = copyBoard(currentBoardStatus);
+                        if ( Symbol.UNDEFINED == tempBoardStatus[x][y] ) {
+                            int retValue = 0;
+                            tempBoardStatus[x][y] = maxiMizingSymbol;
+                            retValue = minMaxAlgorithm( tempBoardStatus, false, maxiMizingSymbol, miniMizingSymbol  );
+                            bestValue = Math.max(retValue, bestValue);
+                        }
+                    }
+                }
+                return  bestValue;
+
+            } else {
+                int bestValue = 1;
+                for (int x = 0; x < 3; x++){
+                    for (int y = 0; y < 3; y++){
+                        Symbol[][] tempBoardStatus = copyBoard(currentBoardStatus);
+                        if ( Symbol.UNDEFINED == tempBoardStatus[x][y] ) {
+                            int retValue = 0;
+                            tempBoardStatus[x][y] = miniMizingSymbol;
+                            retValue = minMaxAlgorithm( tempBoardStatus, true, maxiMizingSymbol, miniMizingSymbol );
+                            bestValue = Math.min(retValue, bestValue);
+                        }
+                    }
+                }
+                return bestValue;
+            }
+    }
+
+    public void playNextMove()
+    {
+        int     bestValue = -1;
+        int     tempReturn;
+        Symbol  maximizingSymbol = currentSymbol;
+        Symbol  minimizingSymbol = previousSymbol;
+        int bestPosX = -1;
+        int bestPosY = -1;
+
+        for (int x = 0; x < 3; x++){
+            for (int y = 0; y < 3; y++){
+                Symbol[][] tempBoardStatus = copyBoard(statusBoard);
+                if ( Symbol.UNDEFINED == tempBoardStatus[x][y] ) {
+                    tempBoardStatus[x][y] = maximizingSymbol;
+                    tempReturn = minMaxAlgorithm(tempBoardStatus, false, maximizingSymbol, minimizingSymbol );
+                    if (bestValue < tempReturn){
+                        bestValue = tempReturn;
+                        bestPosX = x;
+                        bestPosY = y;
+                    }
+                }
+            }
+        }
+        Log.i("INFO", "bestPosX = "+ bestPosX +"bestPosY = "+bestPosY);
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -348,7 +502,7 @@ public class MainActivity extends AppCompatActivity {
     public void togglePlayer()
     {
         // If player A is active then
-        // set Player A incative and Plaayer B active, and vice versa
+        // set Player A inactive and Player B active, and vice versa
         if (playerA.isActive()) {
             playerA.setInactive();
             playerB.setActive();
@@ -381,7 +535,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos00(View view){
-        if (board[0][0].setSymbol(currentSymbol)) { // If box is selected, set current symbol
+        if (mBoard[0][0].setSymbol(currentSymbol)) { // If box is selected, set current symbol
             togglePlayer();                         // Pass turn to another player
             toggleSymbol(view);                     // Toggle selected symbol
         }
@@ -394,7 +548,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos01(View view){
-        if (board[0][1].setSymbol(currentSymbol)){ // If box is selected, set current symbol
+        if (mBoard[0][1].setSymbol(currentSymbol)){ // If box is selected, set current symbol
             togglePlayer();                        // Pass turn to another player
             toggleSymbol(view);                    // Toggle selected symbol
         }
@@ -407,7 +561,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos02(View view){
-        if ( board[0][2].setSymbol(currentSymbol)){ // If box is selected, set current symbol
+        if ( mBoard[0][2].setSymbol(currentSymbol)){ // If box is selected, set current symbol
             togglePlayer();                         // Pass turn to another player
             toggleSymbol(view);                     // Toggle selected symbol
         }
@@ -420,7 +574,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos10(View view){
-        if ( board[1][0].setSymbol(currentSymbol)){ // If box is selected, set current symbol
+        if ( mBoard[1][0].setSymbol(currentSymbol)){ // If box is selected, set current symbol
             togglePlayer();                         // Pass turn to another player
             toggleSymbol(view);                     // Toggle selected symbol
         }
@@ -433,7 +587,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos11(View view){
-        if (board[1][1].setSymbol(currentSymbol)) { // If box is selected, set current symbol
+        if (mBoard[1][1].setSymbol(currentSymbol)) { // If box is selected, set current symbol
             togglePlayer();                         // Pass turn to another player
             toggleSymbol(view);                     // Toggle selected symbol
         }
@@ -446,7 +600,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos12(View view){
-        if (board[1][2].setSymbol(currentSymbol)) { // If box is selected, set current symbol
+        if (mBoard[1][2].setSymbol(currentSymbol)) { // If box is selected, set current symbol
             togglePlayer();                         // Pass turn to another player
             toggleSymbol(view);                     // Toggle selected symbol
         }
@@ -459,7 +613,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos20(View view){
-        if (board[2][0].setSymbol(currentSymbol)) { // If box is selected, set current symbol
+        if (mBoard[2][0].setSymbol(currentSymbol)) { // If box is selected, set current symbol
             togglePlayer();                         // Pass turn to another player
             toggleSymbol(view);                     // Toggle selected symbol
         }
@@ -472,7 +626,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos21(View view){
-        if (board[2][1].setSymbol(currentSymbol)) { // If box is selected, set current symbol
+        if (mBoard[2][1].setSymbol(currentSymbol)) { // If box is selected, set current symbol
             togglePlayer();                         // Pass turn to another player
             toggleSymbol(view);                     // Toggle selected symbol
         }
@@ -485,7 +639,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void selectedPos22(View view){
-        if (board[2][2].setSymbol(currentSymbol)) { // If box is selected, set current symbol
+        if (mBoard[2][2].setSymbol(currentSymbol)) { // If box is selected, set current symbol
             togglePlayer();                         // Pass turn to another player
             toggleSymbol(view);                     // Toggle selected symbol
         }
@@ -517,6 +671,7 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void xSelected(View view){
+        previousSymbol = currentSymbol;
         currentSymbol = Symbol.X_SELECTED;                            // Set current active symbol X
         ImageView xSelectImage = findViewById(R.id.xSelected);        // Get X image and,
         xSelectImage.animate().alpha(0.5f);                           // set it to 0.5 alpha to show it's selected
@@ -531,7 +686,9 @@ public class MainActivity extends AppCompatActivity {
     // Return : Void
     /////////////////////////////////////////////////////////////////////
     public void oSelected(View view){
+        previousSymbol = currentSymbol;
         currentSymbol = Symbol.O_SELECTED;                     // Set current active symbol O
+        playNextMove();
         ImageView oSelectImage = findViewById(R.id.oSelected); // Get O image and,
         oSelectImage.animate().alpha(0.5f);                    // set it to 0.5 alpha to show it's selected
         ImageView xSelectImage = findViewById(R.id.xSelected); // Get X image and,
@@ -548,7 +705,7 @@ public class MainActivity extends AppCompatActivity {
         // Initialize whole board
         for (int x = 0; x < 3; x++ ){
             for (int y = 0; y < 3; y++){
-                board[x][y] = new Box(xImage[x][y], oImage[x][y]);
+                mBoard[x][y] = new Box(xImage[x][y], oImage[x][y], x, y);
             }
         }
 
@@ -559,6 +716,8 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Runnable to process game status (processGameStatus())
         MyRunnable gameStatus = new MyRunnable();
         new Thread(gameStatus).start(); // Start thread
+
+
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -577,15 +736,16 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         // Check if filled boxes are changed, to only call processGameStatus() when new move has been made
-                        if (filledBoxes == (previousFilledBoxes+1)){
+                        if (mFilledBoxes == (previousFilledBoxes+1)){
                             // Assign filled boxes to previous boxes
-                            previousFilledBoxes = filledBoxes;
+                            previousFilledBoxes = mFilledBoxes;
+
                             // Process game status
                             processGameStatus();
                         }
 
                         // If game is restarted
-                        if (filledBoxes == 0)
+                        if (mFilledBoxes == 0)
                             previousFilledBoxes = 0;
                     }
                 });
