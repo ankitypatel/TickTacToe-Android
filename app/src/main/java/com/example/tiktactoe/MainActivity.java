@@ -105,6 +105,10 @@ public class MainActivity extends AppCompatActivity {
             xImage.animate().alpha(0f).setDuration(1000).start();
             oImage.animate().alpha(0f).setDuration(1000).start();
         }
+
+        public void performClick(){
+            xImage.performClick();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -113,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
     /////////////////////////////////////////////////////////////////////
     class Player{
         private boolean isActive; // To show player is active or not (In play)
+        private boolean isAiPlayer;
         private int     score;    // Score
 
         // Constructor
@@ -146,6 +151,16 @@ public class MainActivity extends AppCompatActivity {
         public void resetPlayer()
         {
             setInactive();
+            isAiPlayer = false;
+        }
+
+        //
+        public boolean isAiPlayer() {
+            return isAiPlayer;
+        }
+
+        public void setAiPlayer(){
+            isAiPlayer = true;
         }
     }
 
@@ -309,6 +324,7 @@ public class MainActivity extends AppCompatActivity {
         // Reset both players
         playerA.resetPlayer();
         playerB.resetPlayer();
+        playerB.setAiPlayer();
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -413,6 +429,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void setNextBox(int x, int y)
+    {
+        if ( ( mFilledBoxes < 9 ) &&  ( !mBoard[x][y].boxFilled ) )
+        {
+            mBoard[x][y].performClick();
+        }
+    }
+
     /////////////////////////////////////////////////////////////////////////
     // This method finds best move for maximizing player
     //
@@ -490,7 +514,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        Log.i("INFO", "bestPosX = "+ bestPosX +"bestPosY = "+bestPosY);
+
+        if (((bestPosX < 4) && (bestPosX > -1))&&((bestPosX < 4) && (bestPosX > -1)))
+        {
+            setNextBox(bestPosX, bestPosY);
+            Log.i("INFO", "bestPosX = "+ bestPosX +"bestPosY = "+bestPosY);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -520,6 +549,7 @@ public class MainActivity extends AppCompatActivity {
     /////////////////////////////////////////////////////////////////////
     public void toggleSymbol(View view)
     {
+        SystemClock.sleep(100);
         // If current symbol is X then select O, and vice versa
         if (Symbol.X_SELECTED == currentSymbol) {
             oSelected(view);
@@ -677,6 +707,11 @@ public class MainActivity extends AppCompatActivity {
         xSelectImage.animate().alpha(0.5f);                           // set it to 0.5 alpha to show it's selected
         ImageView oSelectImage = findViewById(R.id.oSelected);        // Get O image and,
         oSelectImage.animate().alpha(1f);                             // set it to alpha 1 in case
+
+        Player activePlayer = getActivePLayer();
+        if (activePlayer.isAiPlayer()){
+            playNextMove();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -688,11 +723,15 @@ public class MainActivity extends AppCompatActivity {
     public void oSelected(View view){
         previousSymbol = currentSymbol;
         currentSymbol = Symbol.O_SELECTED;                     // Set current active symbol O
-        playNextMove();
         ImageView oSelectImage = findViewById(R.id.oSelected); // Get O image and,
         oSelectImage.animate().alpha(0.5f);                    // set it to 0.5 alpha to show it's selected
         ImageView xSelectImage = findViewById(R.id.xSelected); // Get X image and,
         xSelectImage.animate().alpha(1f);                      // set it to alpha 1 in case
+
+        Player activePlayer = getActivePLayer();
+        if (activePlayer.isAiPlayer()){
+            playNextMove();
+        }
     }
 
     private Handler myHandler = new Handler();
@@ -713,6 +752,7 @@ public class MainActivity extends AppCompatActivity {
         playerA = new Player();
         playerB = new Player();
 
+        playerB.setAiPlayer();
         // Initialize Runnable to process game status (processGameStatus())
         MyRunnable gameStatus = new MyRunnable();
         new Thread(gameStatus).start(); // Start thread
@@ -736,7 +776,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         // Check if filled boxes are changed, to only call processGameStatus() when new move has been made
-                        if (mFilledBoxes == (previousFilledBoxes+1)){
+                        if (mFilledBoxes > previousFilledBoxes){
                             // Assign filled boxes to previous boxes
                             previousFilledBoxes = mFilledBoxes;
 
